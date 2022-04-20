@@ -18,7 +18,9 @@
   "homepage": "https://github.com/MartinVoplakal/receptyServer#readme",
   "dependencies": {
     "express": "^4.17.3",
+    "joi": "^17.6.0",
     "mariadb": "^2.5.6",
+    "mongodb": "^4.5.0",
     "nodemon": "^2.0.15"
   }
 }
