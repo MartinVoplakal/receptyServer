@@ -14,7 +14,7 @@ MongoClient.connect(dbUrl + dbPsw + dbParm, function (err, db) {
   console.log("Connected!");
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '10MB' }));
 app.use("/static", express.static("static"));
 
 //načtení templatu
@@ -24,6 +24,13 @@ function render(o) {
   o.ingredience = ""
   for (let i = 0; i < arr.length; i++) {
     o.ingredience += "<li>" + arr[i] + "</li>";
+  }
+  o.htmlImages = "";
+  for (let i = 0; i < o.images.length; i++) {
+    o.htmlImages += `<a href="viz js" data-lightbox="image-1" data-title="${o.nazev}" >
+    <img src="data:image/jpg;base64,${o.images[i]}" alt="${o.nazev}" />
+  </a>`
+
   }
   return template(o)
 }
@@ -48,7 +55,6 @@ app.get('/shared', (req, res) => {
       throw err;
       return;
     }
-    console.log(dbres);
     if (req.query.json == "true") {
       res.send(JSON.stringify(dbres))
       return;
@@ -60,9 +66,13 @@ app.get('/shared', (req, res) => {
 
 
 app.post("/share", (req, res) => {
+  let reqOut = req.body;
+  console.log("share...");
   const { error } = validateRecept(req.body);
   if (error) {
-    res.status(400).send("ERROR   >>>   " + error.details[0].message);
+    res.status(400).send(error.details[0].message);
+    console.log("validate err");
+    console.log(error.details);
   } else {
     const recept = req.body;
     DB.db("recepty").collection("shared").insertOne(recept, function (dberr, dbres) {
@@ -82,7 +92,8 @@ function validateRecept(r) {
   const schema = Joi.object({
     nazev: Joi.string().min(3).max(100).required(),
     ingredience: Joi.array().min(1).required().items(Joi.string()),
-    postup: Joi.string()
+    postup: Joi.string().required(),
+    images: Joi.array().items(Joi.string())
   });
   return schema.validate(r);
 }
