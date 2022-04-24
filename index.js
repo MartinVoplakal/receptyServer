@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
-const fs = require("fs")
+const fs = require("fs");
+const { string } = require('joi');
 const Joi = require("joi");
 const { ObjectId } = require('mongodb');
 const port = 3000
@@ -37,12 +38,20 @@ function render(o) {
 //test
 app.get("/", (req, res) => {
   //test obejct
-  let data = {
-    nazev: "Hlavní název       +ěščřřžžýýýáíé=",
-    ingredience: ["Maso 0,2kg", "vejce 6x", "mléko 0,5l"],
-    postup: "<p>Lorem ipsum <b>dolor</b> sit amet, consectetuer adipiscing elit. Morbi imperdiet, mauris ac auctor dictum, nisl ligula egestas nulla, et sollicitudin sem purus in lacus. Ut tempus purus at lorem. Duis ante orci, molestie vitae vehicula venenatis, tincidunt ac pede. Etiam ligula pede, sagittis quis, interdum ultricies, scelerisque eu. Proin in tellus sit amet nibh dignissim sagittis. Integer in sapien. Quisque tincidunt scelerisque libero. Nam quis nulla. Phasellus enim erat, vestibulum vel, aliquam a, posuere eu, velit. Donec quis nibh at felis congue commodo. Cras elementum. Mauris metus.</p>"
-  }
-  res.send(render(data))
+  let id = "626507cb068813124abfd9f4";
+  DB.db("recepty").collection("shared").findOne({ _id: ObjectId(id) }, { projection: { _id: 0 } }, (dberr, dbres) => {
+    if (dberr) {
+      res.status(500).send()
+      throw err;
+      return;
+    }
+    if (req.query.json == "true") {
+      res.send(JSON.stringify(dbres))
+      return;
+    }
+
+    res.send(render(dbres))
+  })
 })
 //http://localhost:3000/shared?id=id&json=true|false
 //http://localhost:3000/shared?param1=value1&param2=value2
@@ -66,7 +75,6 @@ app.get('/shared', (req, res) => {
 
 
 app.post("/share", (req, res) => {
-  let reqOut = req.body;
   console.log("share...");
   const { error } = validateRecept(req.body);
   if (error) {
@@ -88,14 +96,124 @@ app.post("/share", (req, res) => {
   }
 })
 
+//backup
+app.post("/backup", (req, res) => {
+  const { error } = validateBackup(req.body);
+  if (error) {
+    res.status(400).send(error.details[0].message);
+    console.log("validate err");
+    console.log(error.details);
+  } else {
+    const recept = req.body;
+    // DB.db("backup").collection(recept.clientid).updateOne({ id: recept.id }, { $set: recept }, (dberr, dbres) => {
+    //   if (dberr) {
+    //     res.status(500).send()
+    //     throw dberr;
+    //   }
+    //  if (dbres.modifiedCount < 1) {
+    DB.db("backup").collection(recept.clientid).insertOne(recept, function (dberr, dbres) {
+      if (dberr) {
+        res.status(500).send()
+        throw dberr;
+        return;
+      }
+      res.send("Inserted:" + dbres.insertedId)
+    });
+    //   } else {
+    //console.log(dbres);
+    //res.send("Updated")
+    //  }
+    //})
+    /* if (recept.serverid) {
+       DB.db("backup").collection(recept.clientid + "").updateOne({ _id: ObjectId(recept.serverid) }, { $set: recept }, (dberr, dbres) => {
+         if (dberr) throw err;
+         res.send("OK")
+       })
+     }
+     else*/
+  }
+})
+
+app.get("/backup:get", (req, res) => {
+  switch (req.params.get) {
+    case "Code":
+      DB.db("recepty").collection("clients").insertOne({ clientip: req.headers['x-forwarded-for'] }, function (dberr, dbres) {
+        if (dberr) {
+          res.status(500).send()
+          throw dberr;
+        }
+        console.log("Inserted client: " + dbres.insertedId);
+        res.send(dbres.insertedId)
+      });
+      break;
+    case "All": {
+      const { error } = schema.validate(req.body)
+      if (error) {
+        res.status(400).send(error.details[0].message);
+        console.log("validate err");
+        console.log(error.details);
+      }
+      console.log(req.body.clientid);
+      /*DB.db("recepty").listCollections({ name: req.body.clientid }).next(function (dberr, collinfo) {
+        console.log("res");
+        if (dberr) {
+          res.status(500).send()
+          throw dberr;
+        }
+        if (collinfo) {
+          console.log(collinfo);
+        }
+      });*/
+
+      DB.db("recepty").collection(req.body.clientid).find({}, { projection: { _id: 1 } }).toArray(function (dberr, dbres) {
+        console.log("gooo");
+        if (dberr) {
+          res.status(500).send()
+          throw err;
+        }
+        console.log(result);
+        res.send(dbres)
+      });
+    }
+      break;
+    case "Start":
+      const { error } = schema.validate(req.body)
+      if (error) {
+        res.status(400).send(error.details[0].message);
+        console.log("validate err");
+        console.log(error.details);
+      }
+      DB.db("recepty").collection(req.body.clientid).drop(function (err, delOK) {
+        if (err) throw err;
+        if (delOK) console.log("Collection deleted");
+        res.send()
+      })
+      break;
+  }
+})
+const schema = Joi.object({
+  clientid: Joi.string().required()
+})
+const schemaRecept = Joi.object({
+  nazev: Joi.string().min(3).max(100).required(),
+  ingredience: Joi.array().min(1).required().items(Joi.string()),
+  postup: Joi.string().required(),
+  images: Joi.array().items(Joi.string())
+});
+const schemaBackup = Joi.object({
+  nazev: Joi.string().min(3).max(100).required(),
+  ingredience: Joi.array().min(0).items(Joi.required()),
+  postup: Joi.string(),
+  images: Joi.array().items(Joi.string()),
+
+  clientid: Joi.string().required(),
+  id: Joi.number().required()
+});
 function validateRecept(r) {
-  const schema = Joi.object({
-    nazev: Joi.string().min(3).max(100).required(),
-    ingredience: Joi.array().min(1).required().items(Joi.string()),
-    postup: Joi.string().required(),
-    images: Joi.array().items(Joi.string())
-  });
-  return schema.validate(r);
+  return schemaRecept.validate(r);
+}
+function validateBackup(m) {
+  return schemaBackup.validate(m);
 }
 
 app.listen(port, () => {
