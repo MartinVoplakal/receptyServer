@@ -79,8 +79,8 @@ app.post("/share", (req, res) => {
   const { error } = validateRecept(req.body);
   if (error) {
     res.status(400).send(error.details[0].message);
-    console.log("validate err");
     console.log(error.details);
+    return;
   } else {
     const recept = req.body;
     DB.db("recepty").collection("shared").insertOne(recept, function (dberr, dbres) {
@@ -101,8 +101,8 @@ app.post("/backup", (req, res) => {
   const { error } = validateBackup(req.body);
   if (error) {
     res.status(400).send(error.details[0].message);
-    console.log("validate err");
     console.log(error.details);
+    return;
   } else {
     const recept = req.body;
     // DB.db("backup").collection(recept.clientid).updateOne({ id: recept.id }, { $set: recept }, (dberr, dbres) => {
@@ -146,51 +146,73 @@ app.get("/backup:get", (req, res) => {
         res.send(dbres.insertedId)
       });
       break;
-    case "All": {
+    case "Recept":
       const { error } = schema.validate(req.body)
       if (error) {
         res.status(400).send(error.details[0].message);
-        console.log("validate err");
         console.log(error.details);
+        return;
       }
-      console.log(req.body.clientid);
-      /*DB.db("recepty").listCollections({ name: req.body.clientid }).next(function (dberr, collinfo) {
-        console.log("res");
+      DB.db("backup").collection(req.body.clientid).findOne({ _id: ObjectId(req.query.id) }, { projection: { _id: 0 } }, (dberr, dbres) => {
         if (dberr) {
           res.status(500).send()
-          throw dberr;
+          throw err;
+          return;
         }
-        if (collinfo) {
-          console.log(collinfo);
-        }
-      });*/
+        res.send(JSON.stringify(dbres))
+      })
+      break;
+    //vrátí  [{_id: xxx}] receptů pro následný get z app
+    default:
+      res.status(400).send("Invalid argument");
+      break;
+  }
+})
 
-      DB.db("recepty").collection(req.body.clientid).find({}, { projection: { _id: 1 } }).toArray(function (dberr, dbres) {
+//smazat starou zálohu
+app.post("/backup:post", (req, res) => {
+  switch (req.params.post) {
+    case "IDs": {
+      const { error } = schema.validate(req.body)
+      if (error) {
+        res.status(400).send(error.details[0].message);
+        console.log(error.details);
+        return;
+      }
+      console.log(req.body.clientid);
+      DB.db("backup").collection(req.body.clientid).find({}, { projection: { _id: 1 } }).toArray(function (dberr, dbres) {
         console.log("gooo");
         if (dberr) {
           res.status(500).send()
           throw err;
         }
-        console.log(result);
+        console.log(dbres);
         res.send(dbres)
       });
     }
       break;
-    case "Start":
+    case "Reset": {
       const { error } = schema.validate(req.body)
+      console.log(req.body);
       if (error) {
         res.status(400).send(error.details[0].message);
-        console.log("validate err");
         console.log(error.details);
+        return;
       }
-      DB.db("recepty").collection(req.body.clientid).drop(function (err, delOK) {
-        if (err) throw err;
-        if (delOK) console.log("Collection deleted");
-        res.send()
+      DB.db("backup").collection(req.body.clientid).drop(function (err, delOK) {
+        //        if (err) throw err;
+        if (delOK) res.send("Collection deleted");
+        else res.send("Nothing to delete")
       })
+    }
+      break;
+    default:
+      res.status(400).send("Invalid argument");
       break;
   }
-})
+});
+
+
 const schema = Joi.object({
   clientid: Joi.string().required()
 })
