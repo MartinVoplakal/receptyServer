@@ -29,6 +29,7 @@
     box-sizing: border-box;
 }
 
+
 html,
 body {
     height: 100%;
@@ -90,7 +91,7 @@ h2 {
 }
 
 .column {
-    padding: .75em;
+    padding: 20px;
 }
 
 .column.left {
@@ -104,11 +105,13 @@ h2 {
 .column.middle {
     grid-area: middle;
     background-color: #ddb684;
+    overflow-wrap: anywhere;
 }
 
 .column.right {
     grid-area: right;
     background-color: rgb(185, 210, 231);
+    max-width: 40vh;
 }
 
 .ingred {
@@ -116,9 +119,9 @@ h2 {
     border-radius: 10px;
     background-color: #ddb684;
 }
-
-.images {
-    margin: 0 20px;
+img {
+    width: 100%;
+    margin: 3px;
 }
 
 
@@ -127,5 +130,8 @@ h2 {
 @media screen and (max-width: 900px) {
     .row {
         grid-template-areas: "left" "middle" "right";
+    }
+    .column.right {
+        max-width: 100%;
     }
 }

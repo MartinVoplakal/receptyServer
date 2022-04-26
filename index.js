@@ -28,11 +28,11 @@ function render(o) {
   }
   o.htmlImages = "";
   for (let i = 0; i < o.images.length; i++) {
-    o.htmlImages += `<a href="viz js" data-lightbox="image-1" data-title="${o.nazev}" >
+    o.htmlImages += `<a href="" data-lightbox="image-1" data-title="${o.nazev}" >
     <img src="data:image/jpg;base64,${o.images[i]}" alt="${o.nazev}" />
   </a>`
-
   }
+  if (o.htmlImages.trim() === "") o.htmlImages = '<p style="font-size: 0.9em; color: dimgray;">Žádné obrázky<br>nebyly přidány</p>'
   return template(o)
 }
 //test
@@ -90,7 +90,6 @@ app.post("/share", (req, res) => {
         return;
       }
       console.log("Inserted:");
-      console.log(recept);
       res.send(dbres.insertedId)
     });
   }
@@ -98,19 +97,15 @@ app.post("/share", (req, res) => {
 
 //backup
 app.post("/backup", (req, res) => {
+  console.log("backup");
   const { error } = validateBackup(req.body);
   if (error) {
     res.status(400).send(error.details[0].message);
-    console.log(error.details);
+    console.log(error);
+    throw error;
     return;
   } else {
     const recept = req.body;
-    // DB.db("backup").collection(recept.clientid).updateOne({ id: recept.id }, { $set: recept }, (dberr, dbres) => {
-    //   if (dberr) {
-    //     res.status(500).send()
-    //     throw dberr;
-    //   }
-    //  if (dbres.modifiedCount < 1) {
     DB.db("backup").collection(recept.clientid).insertOne(recept, function (dberr, dbres) {
       if (dberr) {
         res.status(500).send()
@@ -119,18 +114,6 @@ app.post("/backup", (req, res) => {
       }
       res.send("Inserted:" + dbres.insertedId)
     });
-    //   } else {
-    //console.log(dbres);
-    //res.send("Updated")
-    //  }
-    //})
-    /* if (recept.serverid) {
-       DB.db("backup").collection(recept.clientid + "").updateOne({ _id: ObjectId(recept.serverid) }, { $set: recept }, (dberr, dbres) => {
-         if (dberr) throw err;
-         res.send("OK")
-       })
-     }
-     else*/
   }
 })
 
@@ -147,13 +130,13 @@ app.get("/backup:get", (req, res) => {
       });
       break;
     case "Recept":
-      const { error } = schema.validate(req.body)
-      if (error) {
+      if (!req.headers.clientkey || !req.headers.clientkey) {
         res.status(400).send(error.details[0].message);
         console.log(error.details);
         return;
       }
-      DB.db("backup").collection(req.body.clientid).findOne({ _id: ObjectId(req.query.id) }, { projection: { _id: 0 } }, (dberr, dbres) => {
+      console.log(req.headers.clientkey);
+      DB.db("backup").collection(req.headers.clientkey).findOne({ _id: ObjectId(req.headers.id) }, { projection: { _id: 0 } }, (dberr, dbres) => {
         if (dberr) {
           res.status(500).send()
           throw err;
@@ -181,19 +164,16 @@ app.post("/backup:post", (req, res) => {
       }
       console.log(req.body.clientid);
       DB.db("backup").collection(req.body.clientid).find({}, { projection: { _id: 1 } }).toArray(function (dberr, dbres) {
-        console.log("gooo");
         if (dberr) {
           res.status(500).send()
           throw err;
         }
-        console.log(dbres);
         res.send(dbres)
       });
     }
       break;
     case "Reset": {
       const { error } = schema.validate(req.body)
-      console.log(req.body);
       if (error) {
         res.status(400).send(error.details[0].message);
         console.log(error.details);
@@ -220,14 +200,13 @@ const schemaRecept = Joi.object({
   nazev: Joi.string().min(3).max(100).required(),
   ingredience: Joi.array().min(1).required().items(Joi.string()),
   postup: Joi.string().required(),
-  images: Joi.array().items(Joi.string())
+  images: Joi.array().max(5).items(Joi.string())
 });
 const schemaBackup = Joi.object({
   nazev: Joi.string().min(3).max(100).required(),
   ingredience: Joi.array().min(0).items(Joi.required()),
-  postup: Joi.string(),
-  images: Joi.array().items(Joi.string()),
-
+  postup: Joi.string().allow(''),
+  images: Joi.array().items(Joi.string().allow('')),
   clientid: Joi.string().required(),
   id: Joi.number().required()
 });
