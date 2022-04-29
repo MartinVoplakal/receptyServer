@@ -1,7 +1,7 @@
 @charset "UTF-8";
 :root {
-    --bg-color-primary: #77adcc;
-    --bg-color-secondary: #daad86;
+    --bg-color-primary: #f0b400;
+    --bg-color-secondary: #e6c051;
     --font-family: arial;
     --font-size-header: 1.25em;
     --font-size-text: 1rem;
@@ -92,6 +92,7 @@ h2 {
 
 .column {
     padding: 20px;
+    background-color: #f0b400;
 }
 
 .column.left {
@@ -99,18 +100,15 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    background-color: #fbeec1;
 }
 
 .column.middle {
     grid-area: middle;
-    background-color: #ddb684;
     overflow-wrap: anywhere;
 }
 
 .column.right {
     grid-area: right;
-    background-color: rgb(185, 210, 231);
     max-width: 40vh;
 }
 

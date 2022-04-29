@@ -61,6 +61,7 @@ function render(o) {
     o.ingredience += "<li>" + arr[i] + "</li>";
   }
   o.htmlImages = "";
+  if(!o.images) o.images = [];
   for (let i = 0; i < o.images.length; i++) {
     o.htmlImages += `<a href="" data-lightbox="image-1" data-title="${o.nazev}" >
     <img src="data:image/jpg;base64,${o.images[i]}" alt="${o.nazev}" />
