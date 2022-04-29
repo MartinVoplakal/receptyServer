@@ -1,7 +1,7 @@
 @charset "UTF-8";
 :root {
-    --bg-color-primary: #f0b400;
-    --bg-color-secondary: #e6c051;
+    --bg-color-primary: #e7c55f;
+    --bg-color-secondary: #f0b400;
     --font-family: arial;
     --font-size-header: 1.25em;
     --font-size-text: 1rem;
@@ -92,7 +92,11 @@ h2 {
 
 .column {
     padding: 20px;
-    background-color: #f0b400;
+    background-color: rgb(185, 210, 231);
+
+}
+* {
+    border-radius: 10px;
 }
 
 .column.left {
@@ -100,22 +104,25 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 2rem;
+
 }
 
 .column.middle {
     grid-area: middle;
     overflow-wrap: anywhere;
+
 }
 
 .column.right {
     grid-area: right;
     max-width: 40vh;
+    background-color: rgb(185, 210, 231);
+
 }
 
 .ingred {
     padding: .5em;
-    border-radius: 10px;
-    background-color: #ddb684;
+    background-color: #f0b400;
 }
 img {
     width: 100%;

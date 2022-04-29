@@ -12,7 +12,6 @@ module.exports = o => `
 </head>
 
 <body>
-    <!-- <img src="data:image/jpg;base64,$x{o.images[0]}" title="${o.nazev}" data-lightbox="image-1" data-title="My caption" /> -->
 
     <div class="header">
         <h1>${o.nazev}</h1>
@@ -28,7 +27,7 @@ module.exports = o => `
                 </div>
                 <div class="share">
                     <a id="WApp">
-                        <p>sdílejte</p>
+                        <p>Sdílejte přes WhatsApp</p>
                     </a>
                 </div>
             </div>
@@ -49,7 +48,6 @@ module.exports = o => `
     </div>
 
     <script>
-        //let links = document.getElementsByTagName("a")
         let links = document.querySelectorAll(".images a")
         for (let a of links) {
             let img = a.firstElementChild;
