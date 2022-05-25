@@ -55,6 +55,7 @@ function validateBackup(m) {
 //načtení templatu
 const template = require("./template/template.html")
 function render(o) {
+  if(!o) return;
   let arr = o.ingredience
   o.ingredience = ""
   for (let i = 0; i < arr.length; i++) {
@@ -87,7 +88,7 @@ app.get('/shared', (req, res) => {
       res.send(JSON.stringify(dbres))
       return;
     }
-
+    if(!dbres) res.status(404).send()
     res.send(render(dbres))
   })
 });
